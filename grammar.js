@@ -227,61 +227,87 @@ const CASTINGS = [/<(bool|int|float|string|number|decimal|datetime|duration)>/];
 const IDENTIFIERS = [/[a-zA-Z_]+[a-zA-Z0-9_]*/];
 const DURATIONS = [/\d+(y|w|d|h|m|s)+/];
 
-module.exports = grammar({
+// module.exports = grammar({
+//   name: "surrealdb",
+//   rules: {
+//     source_file: ($) => repeat(choice($.comment, $.token)),
+//     token: ($) =>
+//       seq(
+//         choice(
+//           $.keyword,
+//           $.operator,
+//           $.punctuation,
+//           $.delimiter,
+//           $.type,
+//           $.function,
+//           $.variable,
+//           $.string,
+//           $.bool,
+//           $.nothing,
+//           $.record,
+//           $.number,
+//           $.constant,
+//           $.future,
+//           $.casting,
+//           $.property,
+//           $.identifier,
+//           $.duration,
+//           $.scripting_function
+//         )
+//       ),
+//     scripting_function: ($) =>
+//       seq("function(){", prec(2, $.scripting_content), choice("};", "},")),
+//     scripting_content: ($) => repeat1($._scripting_statement),
+//     _scripting_statement: ($) => choice($.token),
+//     future: ($) => choice(...FUTURES),
+//     casting: ($) => choice(...CASTINGS),
+//     property: ($) => choice(...PROPERTIES),
+//     identifier: ($) => choice(...IDENTIFIERS),
+//     duration: ($) => choice(...DURATIONS),
+//     constant: ($) => choice(...CONSTANTS),
+//     number: ($) => choice(...NUMBERS),
+//     record: ($) => choice(...RECORDS),
+//     keyword: ($) => choice(...KEYWORDS),
+//     operator: ($) => choice(...OPERATORS),
+//     punctuation: ($) => choice(...PUNCTUATIONS),
+//     delimiter: ($) => choice(...DELIMITERS),
+//     type: ($) => choice($.datatype, $.algotype),
+//     datatype: ($) => choice(...TYPES),
+//     algotype: ($) => choice(...TYPE_ALGORITHMS),
+//     function: ($) => choice(...FUNCTIONS),
+//     bool: ($) => choice(...BOOLS),
+//     nothing: ($) => choice(...NOTHINGS),
+//     variable: ($) => /\$[a-zA-Z_]+[a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)*/,
+//     comment: ($) => token(choice(...COMMENTS)),
+//
+//     string: ($) => choice(...STRINGS),
+//     any_char: ($) => /[^{}\n]/,
+//     new_line: ($) => "\n",
+//   },
+// });
+
+STATEMENTS = module.exports = grammar({
   name: "surrealdb",
+  extras: ($) => [$.comment, /\s/],
   rules: {
-    source_file: ($) => repeat(choice($.comment, $.token)),
-    token: ($) =>
-      seq(
-        choice(
-          $.keyword,
-          $.operator,
-          $.punctuation,
-          $.delimiter,
-          $.type,
-          $.function,
-          $.variable,
-          $.string,
-          $.bool,
-          $.nothing,
-          $.record,
-          $.number,
-          $.constant,
-          $.future,
-          $.casting,
-          $.property,
-          $.identifier,
-          $.duration,
-          $.scripting_function
-        )
-      ),
-    scripting_function: ($) =>
-      seq("function(){", prec(2, $.scripting_content), choice("};", "},")),
-    scripting_content: ($) => repeat1($._scripting_statement),
-    _scripting_statement: ($) => choice($.token),
-    future: ($) => choice(...FUTURES),
-    casting: ($) => choice(...CASTINGS),
-    property: ($) => choice(...PROPERTIES),
-    identifier: ($) => choice(...IDENTIFIERS),
-    duration: ($) => choice(...DURATIONS),
-    constant: ($) => choice(...CONSTANTS),
-    number: ($) => choice(...NUMBERS),
-    record: ($) => choice(...RECORDS),
-    keyword: ($) => choice(...KEYWORDS),
-    operator: ($) => choice(...OPERATORS),
-    punctuation: ($) => choice(...PUNCTUATIONS),
-    delimiter: ($) => choice(...DELIMITERS),
-    type: ($) => choice($.datatype, $.algotype),
-    datatype: ($) => choice(...TYPES),
-    algotype: ($) => choice(...TYPE_ALGORITHMS),
-    function: ($) => choice(...FUNCTIONS),
-    bool: ($) => choice(...BOOLS),
-    nothing: ($) => choice(...NOTHINGS),
-    variable: ($) => /\$[a-zA-Z_]+[a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)*/,
+    source_file: ($) => repeat(choice($.comment, $.statement)),
+
     comment: ($) => token(choice(...COMMENTS)),
 
-    string: ($) => choice(...STRINGS),
-    any_char: ($) => /[^{}\n]/,
-    new_line: ($) => "\n",
+    statement: ($) => choice($.create_statement),
+    create_statement: ($) => seq("CREATE", $.target_table, "CONTENT", $.object),
+
+    target_table: ($) => choice(...PROPERTIES),
+
+    open_curly: ($) => "{",
+    close_curly: ($) => "}",
+    comma: ($) => ",",
+
+    object: ($) => seq($.open_curly, repeat($.property), $.close_curly),
+
+    property: ($) => seq($.key, ":", $.value, optional($.comma)),
+
+    key: ($) => choice(...STRINGS),
+    value: ($) => choice(...STRINGS, $.object),
   },
 });
